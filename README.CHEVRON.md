@@ -1,10 +1,8 @@
-# keytar (Chevron fork)
+# keytar (Chevron)
 
-Fork of the Atom-era native at `node-keytar` version `4.13.0`.
+**Required exports** (github package credentials): Promise-returning
+`getPassword`, `setPassword`, `deletePassword`, `findPassword`,
+`findCredentials`.
 
-Folded Electron 43 / V8 15 compile fixes that used to live in `script/lib/patch-*.js`:
-
-- `NODE_MODULE` → `NODE_MODULE_CONTEXT_AWARE`
-- V8 15 API removals (`GetIsolate`, `String::Write`, `WriteUtf8` capacity)
-- `nan@2.28.0`
-- oniguruma GCC 14 `gnu89` / spellchecker MSVC wstring bind, where applicable
+Chevron rebuilds the addon with electron-rebuild (`--ignore-scripts`
+skips any install hook). Do not switch the JS API to callbacks.
