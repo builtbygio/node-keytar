@@ -57,7 +57,8 @@ const std::string errorStatusToString(OSStatus status) {
 KEYTAR_OP_RESULT AddPassword(const std::string& service,
                              const std::string& account,
                              const std::string& password,
-                             std::string* error) {
+                             std::string* error,
+                             bool returnNonfatalOnDuplicate) {
   OSStatus status = SecKeychainAddGenericPassword(NULL,
                                                   service.length(),
                                                   service.data(),
@@ -67,7 +68,9 @@ KEYTAR_OP_RESULT AddPassword(const std::string& service,
                                                   password.data(),
                                                   NULL);
 
-  if (status != errSecSuccess) {
+  if (status == errSecDuplicateItem && returnNonfatalOnDuplicate) {
+    return FAIL_NONFATAL;
+  } else if (status != errSecSuccess) {
     *error = errorStatusToString(status);
     return FAIL_ERROR;
   }
@@ -79,30 +82,16 @@ KEYTAR_OP_RESULT SetPassword(const std::string& service,
                              const std::string& account,
                              const std::string& password,
                              std::string* error) {
-  SecKeychainItemRef item;
-  OSStatus result = SecKeychainFindGenericPassword(NULL,
-                                                   service.length(),
-                                                   service.data(),
-                                                   account.length(),
-                                                   account.data(),
-                                                   NULL,
-                                                   NULL,
-                                                   &item);
-
-  if (result == errSecItemNotFound) {
-    return AddPassword(service, account, password, error);
-  } else if (result != errSecSuccess) {
-    *error = errorStatusToString(result);
-    return FAIL_ERROR;
-  }
-
-  result = SecKeychainItemModifyAttributesAndData(item,
-                                                  NULL,
-                                                  password.length(),
-                                                  password.data());
-  CFRelease(item);
-  if (result != errSecSuccess) {
-    *error = errorStatusToString(result);
+  KEYTAR_OP_RESULT result = AddPassword(service, account, password,
+                                        error, true);
+  if (result == FAIL_NONFATAL) {
+    // This password already exists, delete it and try again.
+    KEYTAR_OP_RESULT delResult = DeletePassword(service, account, error);
+    if (delResult == FAIL_ERROR)
+      return FAIL_ERROR;
+    else
+      return AddPassword(service, account, password, error, false);
+  } else if (result == FAIL_ERROR) {
     return FAIL_ERROR;
   }
 
@@ -213,11 +202,8 @@ Credentials getCredentialsForItem(CFDictionaryRef item) {
   CFDictionaryAddValue(query, kSecReturnData, kCFBooleanTrue);
   CFDictionaryAddValue(query, kSecAttrAccount, account);
 
-  Credentials cred;
-  CFTypeRef result = NULL;
+  CFTypeRef result;
   OSStatus status = SecItemCopyMatching((CFDictionaryRef) query, &result);
-
-  CFRelease(query);
 
   if (status == errSecSuccess) {
       CFDataRef passwordData = (CFDataRef) CFDictionaryGetValue(
@@ -228,18 +214,15 @@ Credentials getCredentialsForItem(CFDictionaryRef item) {
         passwordData,
         kCFStringEncodingUTF8);
 
-      cred = Credentials(
+      Credentials cred = Credentials(
         CFStringToStdString(account),
         CFStringToStdString(password));
-
       CFRelease(password);
+
+      return cred;
   }
 
-  if (result != NULL) {
-    CFRelease(result);
-  }
-
-  return cred;
+  return Credentials();
 }
 
 KEYTAR_OP_RESULT FindCredentials(const std::string& service,
@@ -261,11 +244,8 @@ KEYTAR_OP_RESULT FindCredentials(const std::string& service,
   CFDictionaryAddValue(query, kSecReturnRef, kCFBooleanTrue);
   CFDictionaryAddValue(query, kSecReturnAttributes, kCFBooleanTrue);
 
-  CFTypeRef result = NULL;
+  CFTypeRef result;
   OSStatus status = SecItemCopyMatching((CFDictionaryRef) query, &result);
-
-  CFRelease(serviceStr);
-  CFRelease(query);
 
   if (status == errSecSuccess) {
     CFArrayRef resultArray = (CFArrayRef) result;
@@ -286,9 +266,12 @@ KEYTAR_OP_RESULT FindCredentials(const std::string& service,
     return FAIL_ERROR;
   }
 
+
   if (result != NULL) {
     CFRelease(result);
   }
+
+  CFRelease(query);
 
   return SUCCESS;
 }

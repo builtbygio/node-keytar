@@ -123,7 +123,7 @@ KEYTAR_OP_RESULT SetPassword(const std::string& service,
   }
 
   LPWSTR user_name = utf8ToWideChar(account);
-  if (user_name == NULL) {
+  if (target_name == NULL) {
     return FAIL_ERROR;
   }
 
@@ -133,7 +133,7 @@ KEYTAR_OP_RESULT SetPassword(const std::string& service,
   cred.UserName = user_name;
   cred.CredentialBlobSize = password.size();
   cred.CredentialBlob = (LPBYTE)(password.data());
-  cred.Persist = CRED_PERSIST_ENTERPRISE;
+  cred.Persist = CRED_PERSIST_LOCAL_MACHINE;
 
   bool result = ::CredWrite(&cred, 0);
   delete[] target_name;
@@ -228,10 +228,6 @@ KEYTAR_OP_RESULT FindCredentials(const std::string& service,
                                  std::vector<Credentials>* credentials,
                                  std::string* errStr) {
   LPWSTR filter = utf8ToWideChar(service + "*");
-  if (filter == NULL) {
-    *errStr = "Error generating credential filter";
-    return FAIL_ERROR;
-  }
 
   DWORD count;
   CREDENTIAL **creds;
