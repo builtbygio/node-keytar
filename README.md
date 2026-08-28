@@ -28,14 +28,6 @@ Depending on your distribution, you will need to run the following command:
   * Run `npm install`
   * Run `npm test` to run the tests
 
-## Supported versions
-
-Each release of `keytar` includes prebuilt binaries for the versions of Node and Electron that are actively supported by these projects. Please refer to the release documentation for [Node](https://github.com/nodejs/Release) and [Electron](https://electronjs.org/docs/tutorial/support) to see what is supported currently.
-
-## Bindings from other languages
-
-- [Rust](https://crates.io/crates/keytar)
-
 ## Docs
 
 ```javascript

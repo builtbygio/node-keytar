@@ -2,102 +2,84 @@
 #define SRC_ASYNC_H_
 
 #include <string>
-#include "napi.h"
+#include "nan.h"
 
 #include "credentials.h"
 
-class SetPasswordWorker : public Napi::AsyncWorker {
+class SetPasswordWorker : public Nan::AsyncWorker {
   public:
     SetPasswordWorker(const std::string& service, const std::string& account, const std::string& password,
-                      const Napi::Env &env);
+                      Nan::Callback* callback);
 
     ~SetPasswordWorker();
 
     void Execute();
-    void OnOK();
-    void OnError(Napi::Error const &error);
-    Napi::Promise Promise();
 
   private:
     const std::string service;
     const std::string account;
     const std::string password;
-    Napi::Promise::Deferred deferred;
 };
 
-class GetPasswordWorker : public Napi::AsyncWorker {
+class GetPasswordWorker : public Nan::AsyncWorker {
   public:
-    GetPasswordWorker(const std::string& service, const std::string& account,
-                      const Napi::Env &env);
+    GetPasswordWorker(const std::string& service, const std::string& account, Nan::Callback* callback);
 
     ~GetPasswordWorker();
 
     void Execute();
-    void OnOK();
-    void OnError(Napi::Error const &error);
-    Napi::Promise Promise();
+    void HandleOKCallback();
 
   private:
     const std::string service;
     const std::string account;
     std::string password;
     bool success;
-    const Napi::Promise::Deferred deferred;
 };
 
-class DeletePasswordWorker : public Napi::AsyncWorker {
+class DeletePasswordWorker : public Nan::AsyncWorker {
   public:
-    DeletePasswordWorker(const std::string& service, const std::string& account,
-                         const Napi::Env &env);
+    DeletePasswordWorker(const std::string& service, const std::string& account, Nan::Callback* callback);
 
     ~DeletePasswordWorker();
 
     void Execute();
-    void OnOK();
-    void OnError(Napi::Error const &error);
-    Napi::Promise Promise();
+    void HandleOKCallback();
 
   private:
     const std::string service;
     const std::string account;
     bool success;
-    Napi::Promise::Deferred deferred;
 };
 
-class FindPasswordWorker : public Napi::AsyncWorker {
+class FindPasswordWorker : public Nan::AsyncWorker {
   public:
-    FindPasswordWorker(const std::string& service, const Napi::Env &env);
+    FindPasswordWorker(const std::string& service, Nan::Callback* callback);
 
     ~FindPasswordWorker();
 
     void Execute();
-    void OnOK();
-    void OnError(Napi::Error const &error);
-    Napi::Promise Promise();
+    void HandleOKCallback();
 
   private:
     const std::string service;
     std::string password;
     bool success;
-    const Napi::Promise::Deferred deferred;
 };
 
-class FindCredentialsWorker : public Napi::AsyncWorker {
+class FindCredentialsWorker : public Nan::AsyncWorker {
   public:
-    FindCredentialsWorker(const std::string& service, const Napi::Env &env);
+    FindCredentialsWorker(const std::string& service, Nan::Callback* callback);
 
     ~FindCredentialsWorker();
 
     void Execute();
-    void OnOK();
-    void OnError(Napi::Error const &error);
-    Napi::Promise Promise();
+    void HandleOKCallback();
 
   private:
     const std::string service;
     std::vector<keytar::Credentials> credentials;
     bool success;
-    const Napi::Promise::Deferred deferred;
 };
 
 #endif  // SRC_ASYNC_H_
